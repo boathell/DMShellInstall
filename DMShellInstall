@@ -739,6 +739,29 @@ function check_file() {
   fi
 }
 #==============================================================#
+# 判断达梦数据库软件是否已安装
+#==============================================================#
+function check_dm_software_installed() {
+  local detect_home="$env_dm_home"
+  local proc_home=
+  if check_file "${detect_home}/bin/disql" || check_file "${detect_home}/bin/dminit"; then
+    return 0
+  fi
+  if pgrep -f "dmimon|dmap|dmserver|dmwatcher|dmmonitor|dmcss|dmcssm|dmasmsvr|dmasmsvrm" >/dev/null 2>&1; then
+    if [[ "$os_version" -ne 6 ]]; then
+      proc_home=$(pgrep -af "dmimon|dmap|dmserver|dmwatcher|dmmonitor|dmcss|dmcssm|dmasmsvr|dmasmsvrm" | awk '{print $2}' | xargs --no-run-if-empty dirname | sed 's|/bin.*$||' | head -1)
+    else
+      # shellcheck disable=SC2009
+      proc_home=$(ps -ef | grep -E "dmimon|dmap|dmserver|dmwatcher|dmmonitor|dmcss|dmcssm|dmasmsvr|dmasmsvrm" | grep -v grep | awk '{split($8, a, "/bin"); print a[1]}' | head -1)
+    fi
+    if [[ -n "$proc_home" ]] && { check_file "${proc_home}/bin/disql" || check_file "${proc_home}/bin/dminit"; }; then
+      env_dm_home="$proc_home"
+      return 0
+    fi
+  fi
+  return 1
+}
+#==============================================================#
 # 备份系统文件
 #==============================================================#
 function bak_file() {
@@ -1434,7 +1457,8 @@ function help() {
   color_printf blue "单机(Single): "
   printf "\n"
   options=(
-    "-di 达梦数据库安装镜像名称"
+    "-di 达梦数据库安装镜像名称
+         说明：安装达梦软件时需要；仅初始化数据库(-oid Y)且软件已安装时可不传"
     "-kp 达梦数据库密钥路径"
     "-hn 主机名"
     "-dp 系统用户dmdba密码，默认值：[Dameng@123]"
@@ -6865,6 +6889,7 @@ function prepare_dsc_node() {
 # 传参前校验函数
 #==============================================================#
 function pre_para_check() {
+  local need_install_media=1
   # 检查脚本路径是否是 /soft，建议放置数据库包和脚本
   if [[ ${software_dir} != "/soft" ]]; then
     printf "\n"
@@ -6877,10 +6902,18 @@ function pre_para_check() {
     printf "\n"
     exit 1
   fi
+  # 仅初始化数据库且软件已安装时，不强制要求提供安装介质
+  if [[ $only_init_db =~ [Yy] ]] && check_dm_software_installed; then
+    need_install_media=0
+  fi
   # 检查是否存在 DMInstall.bin 文件或通过 -di 参数指定安装包
-  if ! [[ -f ${software_dir}/${dm_iso_name} ]] && ! check_file "${software_dir}/DMInstall.bin"; then
+  if [[ $need_install_media -eq 1 ]] && ! [[ -f ${software_dir}/${dm_iso_name} ]] && ! check_file "${software_dir}/DMInstall.bin"; then
     printf "\n"
-    color_printf red "当前目录不存在 DMInstall.bin 安装包，也未通过 -di 参数指定，无法继续安装！"
+    if [[ $only_init_db =~ [Yy] ]]; then
+      color_printf red "当前为仅初始化数据库实例，但未检测到已安装的达梦软件，且当前目录不存在 DMInstall.bin 安装包，也未通过 -di 参数指定，无法继续安装！"
+    else
+      color_printf red "当前目录不存在 DMInstall.bin 安装包，也未通过 -di 参数指定，无法继续安装！"
+    fi
     printf "\n"
     exit 1
   fi
