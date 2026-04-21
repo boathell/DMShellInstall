@@ -72,15 +72,15 @@ space_limit=102400
 # 监听端口号(5236)
 port_num=5236
 # 达梦数据库用户SYSDBA临时密码
-sysdba_pwd_temp=Dm@SYSDBA123
+sysdba_pwd_temp=Dm_SYSDBA123
 # 达梦数据库用户SYSDBA密码
 sysdba_pwd=
 # 达梦数据库用户SYSAUDITOR临时密码
-sysauditor_pwd_temp=Dm@SYSAUD123
+sysauditor_pwd_temp=Dm_SYSAUD123
 # 达梦数据库用户SYSAUDITOR密码
 sysaud_pwd=
 # 达梦数据库用户SYSSSO临时密码
-syssso_pwd_temp=Dm@SYSSSO123
+syssso_pwd_temp=Dm_SYSSSO123
 # 达梦数据库用户SYSSSO密码
 syssso_pwd=
 #判断数据库是是安全版,默认否，即数据库默认是企业版
@@ -4773,16 +4773,14 @@ call SP_CREATE_JOB('bak_full',1,0,'',0,0,'',0,'每天全量备份，并删除30�
 call SP_JOB_CONFIG_START('bak_full');
 call SP_JOB_SET_EP_SEQNO('bak_full', 0);
 call SP_ADD_JOB_STEP('bak_full', 'bak_full', 6, '01000000$backup_dir/$name', 3, 1, 0, 0, NULL, 0);
-call SP_ADD_JOB_STEP('bak_full', 'bak_del', 0, 'CALL SF_BAKSET_BACKUP_DIR_ADD(''DISK'',''$backup_dir/$name'');
-CALL SP_DB_BAKSET_REMOVE_BATCH(''DISK'',NOW()-30);', 1, 1, 0, 0, NULL, 0);
+call SP_ADD_JOB_STEP('bak_full', 'bak_del', 0, 'CALL SF_BAKSET_BACKUP_DIR_ADD(''DISK'',''$backup_dir/$name'');CALL SP_DB_BAKSET_REMOVE_BATCH(''DISK'',NOW()-30);', 1, 1, 0, 0, NULL, 0);
 call SP_ADD_JOB_SCHEDULE('bak_full', 'bak_full', 1, 1, 1, 0, 0, '01:05:00', NULL, '2020-01-01 00:00:00', NULL, '');
 call SP_JOB_CONFIG_COMMIT('bak_full');
 call SP_CREATE_JOB('bak_arch',1,0,'',0,0,'',0,'每天备份归档，删除30天之前的备份');
 call SP_JOB_CONFIG_START('bak_arch');
 call SP_JOB_SET_EP_SEQNO('bak_arch', 0);
 call SP_ADD_JOB_STEP('bak_arch', 'bak_arch', 6, '30000000$backup_dir/$name', 3, 0, 0, 0, NULL, 0);
-call SP_ADD_JOB_STEP('bak_arch', 'bak_del', 0, 'CALL SF_BAKSET_BACKUP_DIR_ADD(''DISK'',''$backup_dir/$name'');
-CALL SP_ARCH_BAKSET_REMOVE_BATCH(''DISK'',NOW()-30);', 0, 0, 0, 0, NULL, 0);
+call SP_ADD_JOB_STEP('bak_arch', 'bak_del', 0, 'CALL SF_BAKSET_BACKUP_DIR_ADD(''DISK'',''$backup_dir/$name'');CALL SP_ARCH_BAKSET_REMOVE_BATCH(''DISK'',NOW()-30);', 0, 0, 0, 0, NULL, 0);
 call SP_ADD_JOB_SCHEDULE('bak_arch', 'back_arch', 1, 1, 1, 0, 0, '03:05:00', NULL, '2023-05-24 18:16:05', NULL, '');
 call SP_JOB_CONFIG_COMMIT('bak_arch');
 call SP_ENABLE_JOB('bak_arch', 0);
@@ -4818,8 +4816,7 @@ call SP_CREATE_JOB('bak_inc',1,0,'',0,0,'',0,'周日到周五做增量备份,如
 call SP_JOB_CONFIG_START('bak_inc');
 call SP_JOB_SET_EP_SEQNO('bak_inc', 0);
 call SP_ADD_JOB_STEP('bak_inc', 'bak_inc', 6, '11000000$backup_dir/$name|$backup_dir/$name', 1, 3, 2, 6, NULL, 0);
-call SP_ADD_JOB_STEP('bak_inc', 'bak_del', 0, 'SF_BAKSET_BACKUP_DIR_ADD(''DISK'',''$backup_dir/$name'');
-CALL SP_DB_BAKSET_REMOVE_BATCH(''DISK'',NOW()-8);', 3, 1, 0, 0, NULL, 0);
+call SP_ADD_JOB_STEP('bak_inc', 'bak_del', 0, 'SF_BAKSET_BACKUP_DIR_ADD(''DISK'',''$backup_dir/$name'');CALL SP_DB_BAKSET_REMOVE_BATCH(''DISK'',NOW()-8);', 3, 1, 0, 0, NULL, 0);
 call SP_ADD_JOB_STEP('bak_inc', 'switch_bak_full', 6, '01000000$backup_dir/$name', 1, 1, 0, 0, NULL, 0);
 call SP_ADD_JOB_SCHEDULE('bak_inc', 'bak_inc', 1, 2, 1, 63, 0, '01:05:00', NULL, '2020-01-01 00:00:00', NULL, '');
 call SP_JOB_CONFIG_COMMIT('bak_inc');
@@ -4827,8 +4824,7 @@ call SP_CREATE_JOB('bak_arch',1,0,'',0,0,'',0,'每天备份归档，删除30天�
 call SP_JOB_CONFIG_START('bak_arch');
 call SP_JOB_SET_EP_SEQNO('bak_arch', 0);
 call SP_ADD_JOB_STEP('bak_arch', 'bak_arch', 6, '30000000$backup_dir/$name', 3, 0, 0, 0, NULL, 0);
-call SP_ADD_JOB_STEP('bak_arch', 'bak_del', 0, 'CALL SF_BAKSET_BACKUP_DIR_ADD(''DISK'',''$backup_dir/$name'');
-CALL SP_ARCH_BAKSET_REMOVE_BATCH(''DISK'',NOW()-30);', 0, 0, 0, 0, NULL, 0);
+call SP_ADD_JOB_STEP('bak_arch', 'bak_del', 0, 'CALL SF_BAKSET_BACKUP_DIR_ADD(''DISK'',''$backup_dir/$name'');CALL SP_ARCH_BAKSET_REMOVE_BATCH(''DISK'',NOW()-30);', 0, 0, 0, 0, NULL, 0);
 call SP_ADD_JOB_SCHEDULE('bak_arch', 'back_arch', 1, 1, 1, 0, 0, '03:05:00', NULL, '2023-05-24 18:16:05', NULL, '');
 call SP_JOB_CONFIG_COMMIT('bak_arch');
 call SP_ENABLE_JOB('bak_arch', 0);
@@ -5920,9 +5916,18 @@ SQL
     local passwd_temp passwd
     # 密码生成逻辑优化，避免重复
     case $user in
-    "SYSDBA") passwd_temp="${sysdba_pwd:-$(gen_password)}" ;;
-    "SYSAUDITOR") passwd_temp="${sysaud_pwd:-$(gen_password)}" ;;
-    "SYSSSO") passwd_temp="${syssso_pwd:-$(gen_password)}" ;;
+    "SYSDBA")
+      passwd_temp="${sysdba_pwd:-$(gen_password)}"
+      sysdba_pwd="$passwd_temp"
+      ;;
+    "SYSAUDITOR")
+      passwd_temp="${sysaud_pwd:-$(gen_password)}"
+      sysaud_pwd="$passwd_temp"
+      ;;
+    "SYSSSO")
+      passwd_temp="${syssso_pwd:-$(gen_password)}"
+      syssso_pwd="$passwd_temp"
+      ;;
     *)
       echo "未知用户：$user"
       return 1
@@ -6316,21 +6321,21 @@ function check_para() {
       checkpara_NULL "$1" "$2"
       sysdba_pwd=$2
       ## 校验数据库密码
-      [[ $sysdba_pwd != "Dm@SYSDBA123" ]] && gen_password "$sysdba_pwd" -sp
+      [[ $sysdba_pwd != "Dm_SYSDBA123" ]] && gen_password "$sysdba_pwd" -sp
       shift 2
       ;;
     -sap | --sysaud_pwd)
       checkpara_NULL "$1" "$2"
       sysaud_pwd=$2
       ## 校验数据库密码
-      [[ $sysaud_pwd != "Dm@SYSAUD123" ]] && gen_password "$sysaud_pwd" -sap
+      [[ $sysaud_pwd != "Dm_SYSAUD123" ]] && gen_password "$sysaud_pwd" -sap
       shift 2
       ;;
     -ssp | --syssso_pwd)
       checkpara_NULL "$1" "$2"
       syssso_pwd=$2
       ## 校验数据库密码
-      [[ $syssso_pwd != "Dm@SYSSSO123" ]] && gen_password "$syssso_pwd" -ssp
+      [[ $syssso_pwd != "Dm_SYSSSO123" ]] && gen_password "$syssso_pwd" -ssp
       shift 2
       ;;
     -bm | --backup_mode)
