@@ -172,6 +172,35 @@ sh DMShellInstall_fixed -ar 4 -h 2>&1 | grep -E "(ar|redun)"
 
 ---
 
+## 八、后续修复记录（2026-04-21）
+
+以下问题在后续实际运行中发现并已直接修复原脚本 `DMShellInstall`。
+
+### 8.1 备份 SQL 脚本执行后作业未创建
+
+| 问题 | 根因 | 修复方式 |
+|------|------|---------|
+| 安装后生成了备份 SQL 脚本，但数据库中未发现备份作业 | `dm_bak()` 生成的 `conf_fullbackup.sql` 和 `conf_incrbackup.sql` 中，`SP_ADD_JOB_STEP` 的第 4 个参数（命令字符串）被拆成两行。`disql` 按行解析时，将第一行视为不完整的 `call` 语句执行报错，第二行被解析为非法 SQL。由于 `disql` 开启了静默模式（`-S`）且 `execute_script()` 返回值未被检查，错误被静默吞噬 | 将 4 处跨行的 `SP_ADD_JOB_STEP` 参数字符串合并为单行 |
+
+**涉及修改位置**：
+- `conf_fullbackup.sql`：`bak_full` 和 `bak_arch` 的 `bak_del` 步骤
+- `conf_incrbackup.sql`：`bak_inc` 和 `bak_arch` 的 `bak_del` 步骤
+
+### 8.2 默认密码包含 `@` 导致连接串解析歧义
+
+| 问题 | 根因 | 修复方式 |
+|------|------|---------|
+| 默认密码（如 `Dm@SYSDBA123`）包含 `@`，`disql` 连接串 `username/password:port` 中的 `@` 可能被解析器误识别为 `username/password@host:port` 的分隔符 | 密码设计使用了特殊字符 `@` | 将三个默认临时密码中的 `@` 替换为 `_`：`Dm_SYSDBA123`、`Dm_SYSAUD123`、`Dm_SYSSSO123`，并同步更新参数校验中的固定值比较 |
+
+### 8.3 SYSAUDITOR 密码安装报告与日志不一致
+
+| 问题 | 根因 | 修复方式 |
+|------|------|---------|
+| 单机安装时，安装报告显示 SYSAUDITOR 密码为固定临时密码，但安装日志中显示的是随机生成的密码 | `modify_pwd()` 中随机生成的密码仅存入局部数组 `user_pwd`，`generate_install_report()` 中 `${sysaud_pwd:-$sysauditor_pwd_temp}` 回退到固定临时密码 | 在 `modify_pwd()` 的 `case` 分支中，将实际使用的密码同步赋值给对应的全局变量 `sysdba_pwd`、`sysaud_pwd`、`syssso_pwd` |
+
+---
+
 *计划创建时间：2026-03-26*  
 *检查脚本版本：DMShellInstall (更新时间 2024-12-27)*  
-*计划文件位置：/home/dmha/DMShellInstall-master/soft/DMShellInstall_参数一致性修改计划.md*
+*计划文件位置：/home/dmha/DMShellInstall-master/soft/DMShellInstall_参数一致性修改计划.md*  
+*后续修复时间：2026-04-21*
